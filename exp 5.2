@@ -1,0 +1,101 @@
+const express = require('express')
+const mongoose = require('mongoose')
+const bodyParser = require('body-parser')
+const studentRoutes = require('./routes/studentRoutes')
+
+const app = express()
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }))
+app.set('view engine', 'ejs')
+
+// Connect to MongoDB
+mongoose.connect('mongodb://127.0.0.1:27017/studentDB', {
+ useNewUrlParser: true,
+ useUnifiedTopology: true
+}).then(() => console.log('MongoDB connected'))
+  .catch(err => console.log(err))
+
+// Routes
+app.use('/students', studentRoutes)
+
+app.get('/', (req, res) => {
+ res.redirect('/students')
+})
+
+app.listen(3000, () => console.log('Server running on port 3000'))
+const Student = require('../models/Student')
+
+// Get all students
+exports.getAllStudents = async (req, res) => {
+ try {
+   const students = await Student.find()
+   res.render('index', { students })
+ } catch (err) {
+   res.status(500).send(err)
+ }
+}
+
+// Show form to add student
+exports.showAddStudentForm = (req, res) => {
+ res.render('addStudent')
+}
+
+// Add student
+exports.addStudent = async (req, res) => {
+ try {
+   await Student.create(req.body)
+   res.redirect('/students')
+ } catch (err) {
+   res.status(500).send(err)
+ }
+}
+
+// Show edit form
+exports.showEditForm = async (req, res) => {
+ try {
+   const student = await Student.findById(req.params.id)
+   res.render('editStudent', { student })
+ } catch (err) {
+   res.status(500).send(err)
+ }
+}
+
+// Update student
+exports.updateStudent = async (req, res) => {
+ try {
+   await Student.findByIdAndUpdate(req.params.id, req.body)
+   res.redirect('/students')
+ } catch (err) {
+   res.status(500).send(err)
+ }
+}
+
+// Delete student
+exports.deleteStudent = async (req, res) => {
+ try {
+   await Student.findByIdAndDelete(req.params.id)
+   res.redirect('/students')
+ } catch (err) {
+   res.status(500).send(err)
+ }
+}
+const express = require('express')
+const router = express.Router()
+const studentController = require('../controllers/studentController')
+
+// Read
+router.get('/', studentController.getAllStudents)
+
+// Create
+router.get('/add', studentController.showAddStudentForm)
+router.post('/add', studentController.addStudent)
+
+// Update
+router.get('/edit/:id', studentController.showEditForm)
+router.post('/edit/:id', studentController.updateStudent)
+
+// Delete
+router.get('/delete/:id', studentController.deleteStudent)
+
+module.exports = router
